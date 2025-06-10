@@ -1,4 +1,9 @@
 {
   "name":  "mattesmohr/twig-let",
-  "description": "Provides a let tag for Twig"
+  "description": "Provides a let tag for Twig",
+  "autoload": {
+    "psr-4": {
+      "mattesmohr\\TwigLet\\": "src/"
+    }
+  }
 }

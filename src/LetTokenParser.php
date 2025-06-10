@@ -1,5 +1,7 @@
 <?php
 
+namespace mattesmohr\TwigLet;
+
 class LetTokenParser extends \Twig\TokenParser\AbstractTokenParser {
 
     public function parse(\Twig\Token $token): \Twig\Node\Node {

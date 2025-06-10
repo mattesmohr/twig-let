@@ -1,5 +1,7 @@
 <?php
 
+namespace mattesmohr\TwigLet;
+
 class LetNode extends \Twig\Node\Node {
 
     public function __construct($name, \Twig\Node\Node $tests, ?\Twig\Node\Node $else, $line) {
