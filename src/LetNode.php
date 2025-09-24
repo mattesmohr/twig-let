@@ -4,37 +4,57 @@ namespace mattesmohr\TwigLet;
 
 class LetNode extends \Twig\Node\Node {
 
-    public function __construct($name, \Twig\Node\Node $tests, ?\Twig\Node\Node $else, $line) {
-        parent::__construct(['tests' => $tests, 'else' => $else], ['name' => $name], $line);
+    public function __construct($name, \Twig\Node\Node $expression, \Twig\Node\Node $body, ?\Twig\Node\Node $else, $line) {
+
+        $nodes = ['expression' => $expression, 'body' => $body];
+
+        if ($else !== null) {
+            $nodes['else'] = $else;
+        }
+
+        parent::__construct($nodes, ['name' => $name], $line);
     }
 
     public function compile(\Twig\Compiler $compiler) {
 
         $compiler->addDebugInfo($this);
 
-        for ($i = 0, $count = \count($this->getNode('tests')); $i < $count; $i += 2) {
+        $compiler
+            ->write('if (')
+            ->subcompile($this->getNode('expression'))
+            ->raw(") {\n");
 
-            $compiler
-                ->write('if (')
-                ->subcompile($this->getNode('tests')->getNode((string) $i))
-                ->raw(") {\n")
-                ->indent()
-                ->write('$context[\''.$this->getAttribute('name').'\'] = ')
-                ->subcompile($this->getNode('tests')->getNode((string) $i))
-                ->raw(";\n");
+        // Make a copy first
+        $compiler
+            ->indent()
+            ->write('$copy = $context;')
+            ->raw(";\n");
 
-            // Checks if there is some body
-            if ($this->getNode('tests')->hasNode((string) ($i + 1))) {
+        $compiler
+            ->write('$context[\''.$this->getAttribute('name').'\'] = ')
+            ->subcompile($this->getNode('expression'))
+            ->raw(";\n");
 
-                $body = $this->getNode('tests')->getNode((string) ($i + 1));
+        $compiler
+            ->subcompile($this->getNode('body'))
+            ->raw(";\n");
 
-                $compiler->subcompile($body);
-            }
-        }
+        // Scope the changes
+        $compiler
+            ->write('unset($context[\''.$this->getAttribute('name').'\']);')
+            ->raw(";\n");
+
+        // Reset the context
+        $compiler
+            ->write('$context = array_merge($copy, $context);')
+            ->raw(";\n");
+
+        $compiler
+            ->write('unset($copy)')
+            ->raw(";\n");
 
         if ($this->hasNode('else')) {
             $compiler
-                ->outdent()
                 ->write("} else {\n")
                 ->indent()
                 ->subcompile($this->getNode('else'));
@@ -43,7 +63,6 @@ class LetNode extends \Twig\Node\Node {
         $compiler
             ->outdent()
             ->write("}\n")
-            ->write('unset($context[\''.$this->getAttribute('name').'\']);')
             ->write("\n");
     }
 }

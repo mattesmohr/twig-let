@@ -17,10 +17,9 @@ class LetTokenParser extends \Twig\TokenParser\AbstractTokenParser {
 
         $stream->expect(\Twig\Token::BLOCK_END_TYPE);
 
-        $body = $this->parser->subparse([$this, 'decideIfFork']);
+        $body = $this->parser->subparse([$this, 'decideElseBranch']);
 
-        $tests = [$expression, $body];
-        $else = [];
+        $else = null;
 
         $continue = true;
 
@@ -30,7 +29,7 @@ class LetTokenParser extends \Twig\TokenParser\AbstractTokenParser {
 
                     $stream->expect(\Twig\Token::BLOCK_END_TYPE);
 
-                    $else[] = $this->parser->subparse([$this, 'decideIfEnd']);
+                    $else = $this->parser->subparse([$this, 'decideLetEnd']);
 
                     break;
 
@@ -47,14 +46,14 @@ class LetTokenParser extends \Twig\TokenParser\AbstractTokenParser {
 
         $stream->expect(\Twig\Token::BLOCK_END_TYPE);
 
-        return new LetNode($name, new \Twig\Node\Node($tests), new \Twig\Node\Node($else), $token->getLine());
+        return new LetNode($name, $expression, $body, $else, $token->getLine());
     }
 
-    public function decideIfFork(\Twig\Token $token) {
+    public function decideElseBranch(\Twig\Token $token) {
         return $token->test(['else', 'endlet']);
     }
 
-    public function decideIfEnd(\Twig\Token $token) {
+    public function decideLetEnd(\Twig\Token $token) {
         return $token->test(['endlet']);
     }
 
